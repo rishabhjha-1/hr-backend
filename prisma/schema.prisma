@@ -7,6 +7,14 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  REMOTE
+  ON_LEAVE
+}
+
 model Employee {
   id         String   @id @default(uuid())
   fullName   String
@@ -19,7 +27,27 @@ model Employee {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  attendance AttendanceRecord[]
+
   @@index([country])
   @@index([jobTitle])
   @@index([country, jobTitle])
+}
+
+model AttendanceRecord {
+  id         String           @id @default(uuid())
+  employeeId String
+  employee   Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date       DateTime         @db.Date
+  status     AttendanceStatus
+  checkIn    DateTime?
+  checkOut   DateTime?
+  notes      String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([employeeId, date])
+  @@index([date])
+  @@index([employeeId])
+  @@index([status])
 }

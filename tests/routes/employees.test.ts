@@ -17,6 +17,7 @@ const employeePayload = {
 
 describe('Employees API', () => {
   beforeEach(async () => {
+    await prisma.attendanceRecord.deleteMany()
     await prisma.employee.deleteMany()
   })
 

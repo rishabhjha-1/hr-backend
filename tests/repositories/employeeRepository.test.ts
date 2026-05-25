@@ -16,6 +16,7 @@ const sampleEmployee = {
 
 describe('EmployeeRepository', () => {
   beforeEach(async () => {
+    await prisma.attendanceRecord.deleteMany()
     await prisma.employee.deleteMany()
   })
 

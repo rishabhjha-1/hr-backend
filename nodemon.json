@@ -1,0 +1,6 @@
+{
+  "watch": ["src"],
+  "ext": "ts",
+  "ignore": ["src/generated/**", "dist/**"],
+  "exec": "pnpm build && node dist/index.js"
+}

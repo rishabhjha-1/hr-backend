@@ -7,6 +7,7 @@ const app = createApp()
 
 describe('Insights API', () => {
   beforeEach(async () => {
+    await prisma.attendanceRecord.deleteMany()
     await prisma.employee.deleteMany()
     await prisma.employee.createMany({
       data: [
