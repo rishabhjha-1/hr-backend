@@ -75,6 +75,17 @@ Configure in `.env` (see `.env.example`):
 - **Writes:** 30 POST/PUT/DELETE / minute on employees, attendance, and self-service
 - Set `RATE_LIMIT_ENABLED=false` for local development or tests
 
+## Docker (this repo)
+
+```bash
+docker compose up --build
+```
+
+- API: `http://localhost:3000`
+- Postgres: `localhost:5432`
+
+Seed after containers are up: `pnpm db:seed` (from your host, with `.env` pointing at `localhost:5432`).
+
 ## Deployment
 
 - Set `DATABASE_URL` for your Postgres instance
