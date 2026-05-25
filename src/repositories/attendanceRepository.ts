@@ -1,5 +1,6 @@
 import type { AttendanceRecord, AttendanceStatus, Prisma } from '../generated/prisma/client.js'
 import { startOfDay } from '../domain/attendanceSchema.js'
+import { deriveStatusFromCheckIn } from '../domain/selfAttendanceSchema.js'
 import { computeAttendanceSummary } from '../domain/attendanceSummary.js'
 import type { AttendanceInput } from '../domain/attendanceSchema.js'
 import { prisma } from '../lib/prisma.js'
@@ -116,6 +117,92 @@ export class AttendanceRepository {
       pageSize,
       totalPages: Math.ceil(total / pageSize) || 1,
     }
+  }
+
+  async findByEmployeeAndDate(employeeId: string, date: Date) {
+    return prisma.attendanceRecord.findUnique({
+      where: {
+        employeeId_date: {
+          employeeId,
+          date: startOfDay(date),
+        },
+      },
+      include: {
+        employee: {
+          select: { id: true, fullName: true, department: true, jobTitle: true },
+        },
+      },
+    })
+  }
+
+  async checkIn(employeeId: string, workMode: 'office' | 'remote' = 'office') {
+    const today = startOfDay(new Date())
+    const now = new Date()
+    const status = deriveStatusFromCheckIn(now, workMode)
+    const existing = await prisma.attendanceRecord.findUnique({
+      where: { employeeId_date: { employeeId, date: today } },
+    })
+
+    if (existing?.checkIn) {
+      return { error: 'already_checked_in' as const, record: existing }
+    }
+
+    if (existing) {
+      const record = await prisma.attendanceRecord.update({
+        where: { id: existing.id },
+        data: { checkIn: now, status, checkOut: null },
+        include: {
+          employee: {
+            select: { id: true, fullName: true, department: true, jobTitle: true },
+          },
+        },
+      })
+      return { error: null, record }
+    }
+
+    const record = await prisma.attendanceRecord.create({
+      data: {
+        employeeId,
+        date: today,
+        status,
+        checkIn: now,
+        checkOut: null,
+        notes: null,
+      },
+      include: {
+        employee: {
+          select: { id: true, fullName: true, department: true, jobTitle: true },
+        },
+      },
+    })
+    return { error: null, record }
+  }
+
+  async checkOut(employeeId: string) {
+    const today = startOfDay(new Date())
+    const now = new Date()
+    const existing = await prisma.attendanceRecord.findUnique({
+      where: { employeeId_date: { employeeId, date: today } },
+    })
+
+    if (!existing?.checkIn) {
+      return { error: 'not_checked_in' as const, record: existing }
+    }
+
+    if (existing.checkOut) {
+      return { error: 'already_checked_out' as const, record: existing }
+    }
+
+    const record = await prisma.attendanceRecord.update({
+      where: { id: existing.id },
+      data: { checkOut: now },
+      include: {
+        employee: {
+          select: { id: true, fullName: true, department: true, jobTitle: true },
+        },
+      },
+    })
+    return { error: null, record }
   }
 
   async getSummary(from?: Date, to?: Date) {

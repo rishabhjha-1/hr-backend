@@ -27,6 +27,20 @@ export class EmployeeRepository {
     return prisma.employee.findUnique({ where: { id } })
   }
 
+  async findByEmail(email: string) {
+    return prisma.employee.findFirst({
+      where: { email: { equals: email.trim(), mode: 'insensitive' } },
+      select: {
+        id: true,
+        fullName: true,
+        jobTitle: true,
+        department: true,
+        country: true,
+        email: true,
+      },
+    })
+  }
+
   async update(id: string, input: EmployeeInput): Promise<Employee | null> {
     try {
       return await prisma.employee.update({ where: { id }, data: input })
